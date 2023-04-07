@@ -1,8 +1,8 @@
 import "./style.css";
-import { Form, FormGroup, Input, Button, ButtonGroup, Label } from "reactstrap";
-import { Stack } from "react-bootstrap";
-import React, { useState, useMemo} from "react";
-import { FaLocationArrow, FaTimes } from "react-icons/fa";
+//import { Form, FormGroup, Input, Button, ButtonGroup, Label } from "reactstrap";
+//import { Stack } from "react-bootstrap";
+import React, { useState, useMemo } from "react";
+//import { FaLocationArrow, FaTimes } from "react-icons/fa";
 //import {Route, NavLink, HashRouter from "react-router-dom";, useEffect
 import {
   withScriptjs,
@@ -10,9 +10,8 @@ import {
   GoogleMap,
   Marker,
   InfoWindow,
-  Autocomplete,
+  //Autocomplete,
 } from "react-google-maps";
-//import * as parksData from "./data/skateboard-parks.json";
 import * as otoparkData from "./data/otopark.json";
 
 function Map() {
@@ -65,21 +64,26 @@ function Map() {
 const MapWrapped = withScriptjs(withGoogleMap(Map));
 
 export default function HomeContact() {
-  
-
   return (
     <div style={{ width: "69vw", height: "100vh" }}>
-      <Form className="form  mx-auto">
+     {/* <Form className="form  mx-auto">
         <FormGroup>
           <Autocomplete>
-            <Input type="text" placeholder="Origin" /*ref={originRef}*/ />
+            <Input
+              id="origin"
+              name="origin"
+              type="text"
+              placeholder="Origin" /*ref={originRef}
+            />
           </Autocomplete>
         </FormGroup>
         <FormGroup>
           <Autocomplete>
             <Input
+              id="destination"
+              name="destination"
               type="text"
-              placeholder="Destination" /*ref={destiantionRef}*/
+              placeholder="Destination" /*ref={destiantionRef}
             />
           </Autocomplete>
         </FormGroup>
@@ -87,19 +91,19 @@ export default function HomeContact() {
           <ButtonGroup>
             <Button
               colorScheme="pink"
-              type="submit" /*onClick={calculateRoute}*/
+              type="submit" /*onClick={calculateRoute}
             >
               Calculate Route
             </Button>
-            <Button /*onClick={clearRoute}*/>
+            <Button /*onClick={clearRoute}>
               <FaTimes aria-label="center back" />
             </Button>
           </ButtonGroup>
           <Stack className="end" direction="horizontal" gap="3">
             <Label>Distance: </Label>
-            {/*{distance}*/}
+            {/*{distance}}
             <Label>Duration: </Label>
-            {/*{duration}*/}
+            {/*{duration}}
             <Button
               onClick={() => {
                 //map.panTo(center);
@@ -111,6 +115,7 @@ export default function HomeContact() {
           </Stack>
         </FormGroup>
       </Form>
+            */}
       {/* burada url imizi kullanarak google mapin ana sayfada yüklenmesini saglıyoruz */}
       <MapWrapped
         googleMapURL={`https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry,drawing,places&key=${process.env.REACT_APP_GOOGLE_KEY}`}

@@ -3,16 +3,17 @@ import { Form, FormGroup, Input } from "reactstrap";
 import { Stack } from "react-bootstrap";
 import { useNavigate, Link } from "react-router-dom";
 import Button from "react-bootstrap/Button";
-import { AiOutlineUserAdd } from "react-icons/ai";
+import { GrMapLocation } from "react-icons/gr";
 import "./style.css";
 
 function SingUp() {
-  const [user, setUser] = useState({
+  const [carpark, setCarpark] = useState({
     name: "",
-    username: "",
-    email: "",
-    phone: "",
-    website: "",
+    address: "",
+    country: "",
+    empty: "",
+    latitude:"",
+    longitude: "",
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -21,23 +22,25 @@ function SingUp() {
   const onSingUp = (e) => {
     //Inputlar boş mu kontrol eder
     if (
-      user.name === "" ||
-      user.username === "" ||
-      user.email === "" ||
-      user.phone === "" ||
-      user.website === ""
+      carpark.name === "" ||
+      carpark.address === "" ||
+      carpark.country === "" ||
+      carpark.empty === "" ||
+      carpark.latitude === "" ||
+      carpark.longitude === ""
     ) {
       setError("Lütfen tüm alanları doldurunuz!");
       return;
     } else {
       e.preventDefault();
-      console.log(user);
-      const model = user;
-      localStorage.setItem("name", user.name);
-      localStorage.setItem("username", user.username);
-      localStorage.setItem("email", user.email);
-      localStorage.setItem("phone", user.phone);
-      localStorage.setItem("website", user.website);
+      console.log(carpark);
+      const model = carpark;
+      localStorage.setItem("name", carpark.name);
+      localStorage.setItem("address", carpark.address);
+      localStorage.setItem("country", carpark.country);
+      localStorage.setItem("empty", carpark.empty);
+      localStorage.setItem("latitude", carpark.latitude);
+      localStorage.setItem("longitude", carpark.longitude);
 
       //Fetch ile kayıt yapılır
       fetch("https://jsonplaceholder.typicode.com/users", {
@@ -62,7 +65,7 @@ function SingUp() {
     <div className="container ">
       <div className="itemCenter fullScreen mx-auto">
         <div className="form col-md-3 mx-auto">
-          <AiOutlineUserAdd className="formIcon mx-auto" />
+          <GrMapLocation className="formIcon mx-auto" />
           <Form className="bg-blue" onSubmit={onSingUp}>
             <FormGroup>
             <Input
@@ -70,52 +73,52 @@ function SingUp() {
                 name="name"
                 placeholder="Carpark Name"
                 type="text"
-                value={user.name}
-                onChange={(e) => setUser({ ...user, name: e.target.value })}
+                value={carpark.name}
+                onChange={(e) => setCarpark({ ...carpark, name: e.target.value })}
               />
               <Input
-                id="username"
-                name="username"
+                id="address"
+                name="address"
                 placeholder="Carpark Address"
                 type="text"
-                value={user.username}
-                onChange={(e) => setUser({ ...user, username: e.target.value })}
+                value={carpark.address}
+                onChange={(e) => setCarpark({ ...carpark, address: e.target.value })}
               />
                <Input
-                id="username"
-                name="username"
+                id="country"
+                name="country"
                 placeholder="Carpark Country"
                 type="text"
-                value={user.username}
-                onChange={(e) => setUser({ ...user, username: e.target.value })}
+                value={carpark.country}
+                onChange={(e) => setCarpark({ ...carpark, country: e.target.value })}
               />
               <Input
-                id="username"
-                name="username"
-                placeholder="Carpark Empty space"
+                id="empty"
+                name="empty"
+                placeholder="Carpark Empty Space"
                 type="text"
-                value={user.username}
-                onChange={(e) => setUser({ ...user, username: e.target.value })}
+                value={carpark.empty}
+                onChange={(e) => setCarpark({ ...carpark, empty: e.target.value })}
               />
               <Input
-                id="username"
-                name="username"
-                placeholder="Carpark cordinates"
+                id="latitude"
+                name="latitude"
+                placeholder="Carpark Latitude"
                 type="text"
-                value={user.username}
-                onChange={(e) => setUser({ ...user, username: e.target.value })}
+                value={carpark.latitude}
+                onChange={(e) => setCarpark({ ...carpark, latitude: e.target.value })}
               />
               <Input
-                id="username"
-                name="username"
-                placeholder="Carpark cordinates"
+                id="longitude"
+                name="longitude"
+                placeholder="Carpark Longitude"
                 type="text"
-                value={user.username}
-                onChange={(e) => setUser({ ...user, username: e.target.value })}
+                value={carpark.longitude}
+                onChange={(e) => setCarpark({ ...carpark, longitude: e.target.value })}
               />
             </FormGroup>
             <FormGroup>
-              <Stack className="end" direction="horizontal" gap="3">
+              <Stack className="flex-end" direction="horizontal" gap="3">
                 <Button variant="light">
                   <Link to="/">Back</Link>
                 </Button>
