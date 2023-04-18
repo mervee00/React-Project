@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import { GrMapLocation } from "react-icons/gr";
 import "./style.css";
+import otopark from './data/otopark.json';
 
 function SingUp() {
   const [carpark, setCarpark] = useState({
@@ -43,7 +44,7 @@ function SingUp() {
       localStorage.setItem("longitude", carpark.longitude);
 
       //Fetch ile kayıt yapılır
-      fetch("https://jsonplaceholder.typicode.com/users", {
+      fetch(otopark, {
         method: "POST",
         body: JSON.stringify(model),
         headers: { "Content-type": "application/json; charset=UTF-8" },
@@ -100,7 +101,7 @@ function SingUp() {
                 value={carpark.empty}
                 onChange={(e) => setCarpark({ ...carpark, empty: e.target.value })}
               />
-              <Input
+              {/*<Input
                 id="latitude"
                 name="latitude"
                 placeholder="Carpark Latitude"
@@ -115,7 +116,7 @@ function SingUp() {
                 type="text"
                 value={carpark.longitude}
                 onChange={(e) => setCarpark({ ...carpark, longitude: e.target.value })}
-              />
+  />*/}
             </FormGroup>
             <FormGroup>
               <Stack className="flex-end" direction="horizontal" gap="3">
