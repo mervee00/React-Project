@@ -8,6 +8,7 @@ import "./style.css";
 import db from "./firebase";
 import firebase from "firebase/compat/app";
 import "firebase/firestore";
+import { InfoWindow } from "@react-google-maps/api";
 //import otopark from "./data/otopark.json";
 
 function SingUp() {
@@ -20,10 +21,12 @@ function SingUp() {
     longitude: "",
   });
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
   //const navigate = useNavigate();
 
   const onSingUp = (e) => {
-    /*if (
+    if (
       carpark.name === "" ||
       carpark.address === "" ||
       carpark.country === "" ||
@@ -33,7 +36,7 @@ function SingUp() {
     ) {
       setError("Lütfen tüm alanları doldurunuz!");
       return;
-    } else {*/
+    } else {
       e.preventDefault();
       // GeoPoint örneği oluşturun
       const geoPoint = new firebase.firestore.GeoPoint(
@@ -49,12 +52,19 @@ function SingUp() {
           coordinates: geoPoint,
         })
         .then(() => {
+          setMessage("Kayıt tamamlandı!");
           console.log("Veriler başarıyla Firestore'a kaydedildi.");
+          carpark.name = "" 
+          carpark.address = "" 
+          carpark.country = "" 
+          carpark.empty ="" 
+          carpark.latitude = "" 
+          carpark.longitude = ""
         })
         .catch((error) => {
           console.error("Veri kaydederken bir hata oluştu:", error);
         });
-    //}
+    }
   };
 
   /*Kayıt işlemi
@@ -188,6 +198,7 @@ function SingUp() {
             </FormGroup>
           </Form>
           {error !== "" ? <div className="text-danger">{error}</div> : ""}
+          {message !== "" ? <div className="text">{message}</div> : ""}
         </div>
       </div>
     </div>

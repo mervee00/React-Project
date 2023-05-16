@@ -8,8 +8,7 @@ import {
 } from "@react-google-maps/api";
 import db from "./firebase";
 
-
-//haritaın kaplayacagı alanı ve sürekli kendini centera göre güncellememisi için places dışarı yazdık
+//haritanın kaplayacagı alanı ve sürekli kendini centera göre güncellememisi için places dışarı yazdık
 const libraries = ["places"];
 const mapContainerStyle = {
   width: "69vw",
@@ -22,14 +21,14 @@ const options = {
   zoomControl: true,
 };
 
-//harita ilk açıldıgında bulunacagıkordinatlar
+//harita ilk açıldıgında bulunacagı kordinatlar
 const center = {
   lat: 39.896519,
   lng: 32.861969,
 };
 
 export default function HomeContact() {
-
+  //haritada arama yapmak için
   const inputRef = useRef();
   const handlePlacesChanged = () => {
     const [place] = inputRef.current.getPlaces();
@@ -92,13 +91,12 @@ export default function HomeContact() {
   return (
     <div>
       <StandaloneSearchBox
-      onLoad={ref =>inputRef.current=ref}
-      onPlacesChanged={handlePlacesChanged}>
-        <input type="text"
-        className="form-control"
-        placeholder="Enter" />
+        onLoad={(ref) => (inputRef.current = ref)}
+        onPlacesChanged={handlePlacesChanged}
+      >
+        <input type="text" className="form-control" placeholder="Enter" />
       </StandaloneSearchBox>
-      
+
       <GoogleMap
         id="map"
         mapContainerStyle={mapContainerStyle}
@@ -145,7 +143,6 @@ export default function HomeContact() {
     </div>
   );
 }
-
 
 /*window.addEventListener("load", () => {
     Fetchdata();
