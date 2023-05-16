@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { Form, FormGroup, Input } from "reactstrap";
 import { Stack } from "react-bootstrap";
-import { useNavigate, Link } from "react-router-dom";
+//import { useNavigate, Link } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import { GrMapLocation } from "react-icons/gr";
 import "./style.css";
-import otopark from './data/otopark.json';
+import db from "./firebase";
+import firebase from "firebase/compat/app";
+import "firebase/firestore";
+//import otopark from "./data/otopark.json";
 
 function SingUp() {
   const [carpark, setCarpark] = useState({
@@ -13,13 +16,48 @@ function SingUp() {
     address: "",
     country: "",
     empty: "",
-    latitude:"",
+    latitude: "",
     longitude: "",
   });
   const [error, setError] = useState("");
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
 
-  //Kayıt işlemi
+  const onSingUp = (e) => {
+    /*if (
+      carpark.name === "" ||
+      carpark.address === "" ||
+      carpark.country === "" ||
+      carpark.empty === "" ||
+      carpark.latitude === "" ||
+      carpark.longitude === ""
+    ) {
+      setError("Lütfen tüm alanları doldurunuz!");
+      return;
+    } else {*/
+      e.preventDefault();
+      // GeoPoint örneği oluşturun
+      const geoPoint = new firebase.firestore.GeoPoint(
+        Number(carpark.latitude),
+        Number(carpark.longitude)
+      );
+      db.collection("otopark")
+        .add({
+          name: carpark.name,
+          address: carpark.address,
+          country: carpark.country,
+          empty: Number(carpark.empty),
+          coordinates: geoPoint,
+        })
+        .then(() => {
+          console.log("Veriler başarıyla Firestore'a kaydedildi.");
+        })
+        .catch((error) => {
+          console.error("Veri kaydederken bir hata oluştu:", error);
+        });
+    //}
+  };
+
+  /*Kayıt işlemi
   const onSingUp = (e) => {
     //Inputlar boş mu kontrol eder
     if (
@@ -60,6 +98,14 @@ function SingUp() {
         })
         .catch((err) => console.log(err));
     }
+  };*/
+
+  // sadece numara girilmesine izin verir
+  const handleKeyDown = (event) => {
+    const isNumber = /[0-9.]/.test(event.key);
+    if (!isNumber) {
+      event.preventDefault();
+    }
   };
 
   return (
@@ -69,13 +115,15 @@ function SingUp() {
           <GrMapLocation className="formIcon mx-auto" />
           <Form className="bg-blue" onSubmit={onSingUp}>
             <FormGroup>
-            <Input
+              <Input
                 id="name"
                 name="name"
                 placeholder="Carpark Name"
                 type="text"
                 value={carpark.name}
-                onChange={(e) => setCarpark({ ...carpark, name: e.target.value })}
+                onChange={(e) =>
+                  setCarpark({ ...carpark, name: e.target.value })
+                }
               />
               <Input
                 id="address"
@@ -83,46 +131,56 @@ function SingUp() {
                 placeholder="Carpark Address"
                 type="text"
                 value={carpark.address}
-                onChange={(e) => setCarpark({ ...carpark, address: e.target.value })}
+                onChange={(e) =>
+                  setCarpark({ ...carpark, address: e.target.value })
+                }
               />
-               <Input
+              <Input
                 id="country"
                 name="country"
                 placeholder="Carpark Country"
                 type="text"
                 value={carpark.country}
-                onChange={(e) => setCarpark({ ...carpark, country: e.target.value })}
+                onChange={(e) =>
+                  setCarpark({ ...carpark, country: e.target.value })
+                }
               />
               <Input
                 id="empty"
                 name="empty"
                 placeholder="Carpark Empty Space"
-                type="text"
+                type="number"
                 value={carpark.empty}
-                onChange={(e) => setCarpark({ ...carpark, empty: e.target.value })}
+                onChange={(e) =>
+                  setCarpark({ ...carpark, empty: e.target.value })
+                }
+                onKeyDown={handleKeyDown}
               />
-              {/*<Input
+              <Input
                 id="latitude"
                 name="latitude"
                 placeholder="Carpark Latitude"
-                type="text"
+                type="number"
                 value={carpark.latitude}
-                onChange={(e) => setCarpark({ ...carpark, latitude: e.target.value })}
+                onChange={(e) =>
+                  setCarpark({ ...carpark, latitude: e.target.value })
+                }
+                onKeyDown={handleKeyDown}
               />
               <Input
                 id="longitude"
                 name="longitude"
                 placeholder="Carpark Longitude"
-                type="text"
+                type="number"
                 value={carpark.longitude}
-                onChange={(e) => setCarpark({ ...carpark, longitude: e.target.value })}
-  />*/}
+                onChange={(e) =>
+                  setCarpark({ ...carpark, longitude: e.target.value })
+                }
+              />
             </FormGroup>
             <FormGroup>
               <Stack className="flex-end" direction="horizontal" gap="3">
-                <Button variant="light">
-                  <Link to="/">Back</Link>
-                </Button>
+                <Button variant="light"></Button>
                 <Button variant="success" onClick={onSingUp}>
                   Save
                 </Button>

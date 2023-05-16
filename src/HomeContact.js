@@ -1,25 +1,13 @@
-import React from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   GoogleMap,
   useLoadScript,
   Marker,
   InfoWindow,
+  StandaloneSearchBox,
 } from "@react-google-maps/api";
-import * as otoparkData from "./data/otopark.json";
+import db from "./firebase";
 
-//search işlemiiçin importlar yapıldı
-/*import usePlacesAutocomplete, {
-  getGeocode,
-  getLatLng,
-} from "use-places-autocomplete";
-import {
-  Combobox,
-  ComboboxInput,
-  ComboboxPopover,
-  ComboboxList,
-  ComboboxOption,
-} from "@reach/combobox";
-import "@reach/combobox/styles.css";*/
 
 //haritaın kaplayacagı alanı ve sürekli kendini centera göre güncellememisi için places dışarı yazdık
 const libraries = ["places"];
@@ -41,17 +29,29 @@ const center = {
 };
 
 export default function HomeContact() {
+
+  const inputRef = useRef();
+  const handlePlacesChanged = () => {
+    const [place] = inputRef.current.getPlaces();
+    if (place) {
+      console.log(place.formatted_address);
+      console.log(place.geometry.location.lat());
+      console.log(place.geometry.location.lng());
+    }
+  };
+
   //harita yükleme
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_KEY,
     libraries,
   });
 
-  const [markers, setMarkers] = React.useState([]);
-  const [selected, setSelected] = React.useState(null);
+  const [markers, setMarkers] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [value, setValue] = useState(null);
 
   //haritada bir noktaya tıklandıgında o kordinatları kaydeder
-  const onMapClick = React.useCallback((e) => {
+  const onMapClick = useCallback((e) => {
     setMarkers((current) => [
       ...current,
       {
@@ -62,17 +62,43 @@ export default function HomeContact() {
     ]);
   }, []);
 
-  const mapRef = React.useRef();
-  const onMapLoad = React.useCallback((map) => {
+  const mapRef = useRef();
+  const onMapLoad = useCallback((map) => {
     mapRef.current = map;
   }, []);
+
+  useEffect(() => {
+    // Fetch data from Firestore database
+    db.collection("otopark")
+      .get()
+      .then((querySnapshot) => {
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id, // Firestore doküman kimliği
+          ...doc.data(),
+        }));
+        setMarkers(data);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (value) {
+      setSelected(value);
+    }
+  }, [value]);
 
   if (loadError) return "Error";
   if (!isLoaded) return "Loading...";
 
   return (
     <div>
-      {/*<Search  />panTo={panTo}*/}
+      <StandaloneSearchBox
+      onLoad={ref =>inputRef.current=ref}
+      onPlacesChanged={handlePlacesChanged}>
+        <input type="text"
+        className="form-control"
+        placeholder="Enter" />
+      </StandaloneSearchBox>
+      
       <GoogleMap
         id="map"
         mapContainerStyle={mapContainerStyle}
@@ -84,39 +110,33 @@ export default function HomeContact() {
       >
         {markers.map((marker) => (
           <Marker
-            key={`${marker.lat}-${marker.lng}`}
-            position={{ lat: marker.lat, lng: marker.lng }}
-            //onClick={() => { setSelected(marker);}}
+            key={marker.id} // Firestore doküman kimliği kullanılıyor
+            position={{
+              lat: marker.coordinates[0],
+              lng: marker.coordinates[1],
+            }}
+            onClick={() => {
+              setSelected(marker);
+            }}
           />
         ))}
 
-        {/*json dosyasındaki verileri kullanarak parkların yerini marker ile belirttik */}
-        {otoparkData.features.map((park) => (
-          <Marker
-            key={park.properties.carId}
-            position={{
-              lat: park.geometry.coordinates[0],
-              lng: park.geometry.coordinates[1],
-            }}
-            //listelenen parka tıklandıgında küçük bir bilgi göstermesi için
-            onClick={() => {
-              setSelected(park);
-            }}
-          />
-        ))}
         {/* bir park seçilince infowindow yani bilgi kutusu açılacak */}
         {selected && (
           <InfoWindow
             position={{
-              lat: selected.geometry.coordinates[0],
-              lng: selected.geometry.coordinates[1],
+              lat: selected.coordinates[0],
+              lng: selected.coordinates[1],
+              //lat: selected.geometry.coordinates[0],
+              //lng: selected.geometry.coordinates[1],
             }}
             onCloseClick={() => {
               setSelected(null);
             }}
           >
             <div>
-              <h2>{selected.properties.name}</h2>
+              <h2>{selected.name}</h2>
+              <p>Empty: {selected.empty}</p>
               {/*<p>{selectedPark.properties.DESCRIPTIO}</p>*/}
             </div>
           </InfoWindow>
@@ -125,47 +145,23 @@ export default function HomeContact() {
     </div>
   );
 }
-/*
-function Search() {//{ panTo }
-  const {
-    ready,
-    value,
-    suggestions: { status, data },
-    setValue,
-    clearSuggestions,
-  } = usePlacesAutocomplete({
-    requestOptions: {
-      location: { lat: () => 39.896519, lng: () => 32.861969 },
-      radius: 100 * 1000,
-    },
+
+
+/*window.addEventListener("load", () => {
+    Fetchdata();
   });
 
-  const handleInput = (e) => {
-    setValue(e.target.value);
+  // Fetch the required data using the get() method
+  const Fetchdata = () => {
+    db.collection("otopark")
+      .get()
+      .then((querySnapshot) => {
+        // Loop through the data and store
+        // it in array to display
+        querySnapshot.forEach((element) => {
+        const  otopark = element.otopark();
+          setInfo((arr) => [...arr, otopark]);
+        });
+      });
   };
-
-  return (
-    <div style="search">
-      <Combobox
-        onSelect={(address) => {
-          console.log(address);
-        }}
-      >
-        <ComboboxInput
-          value={value}
-          onChange={handleInput}
-          disabled={!ready}
-          placeholder="Search your location"
-        />
-        <ComboboxPopover>
-          <ComboboxList>
-            {/*{status === "OK" &&
-              data.map(({ id, description }) => (
-                <ComboboxOption key={id} value={description} />
-              ))}
-          </ComboboxList>
-        </ComboboxPopover>
-      </Combobox>
-    </div>
-  );
-}*/
+*/
