@@ -8,7 +8,6 @@ import "./style.css";
 import db from "./firebase";
 import firebase from "firebase/compat/app";
 import "firebase/firestore";
-import { InfoWindow } from "@react-google-maps/api";
 //import otopark from "./data/otopark.json";
 
 function SingUp() {
