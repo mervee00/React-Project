@@ -6,19 +6,27 @@ import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import NavDropdown from "react-bootstrap/NavDropdown";
 import { GlobalContext } from "./GlobalState";
+
 function Navi() {
   const navigate = useNavigate();
   const { setSvalue } = useContext(GlobalContext);
+
   //Çıkış yap
   const logOut = () => {
     localStorage.setItem("name", "");
     localStorage.setItem("username", "");
     navigate("/");
   };
-//<HiUserGroup size="70" color="rgb(221 85 37)" /> icon kullanımı
+
+  //navbar style
+  const navStyle = {
+    backgroundColor: "rgba(33, 150, 243, 0.8)", // mavi tonlarında arka plan rengi
+  };
+  //<HiUserGroup size="70" color="rgb(221 85 37)" /> icon kullanımı
+  
   return (
-    <Navbar bg="light" expand="lg">
-      <Container>   
+    <Navbar style={navStyle} variant="dark" expand="lg">
+      <Container>
         <Navbar.Brand href="/home">
           &nbsp;&nbsp;Otopark Öneri Sistemi
         </Navbar.Brand>

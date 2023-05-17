@@ -10,11 +10,12 @@ import {
 import db from "./firebase";
 import { Button, ButtonGroup, Form } from "reactstrap";
 import { FaLocationArrow, FaTimes } from "react-icons/fa";
+import "./style.css";
 
 //haritanın kaplayacagı alanı ve sürekli kendini centera göre güncellememisi için places dışarı yazdık
 const libraries = ["places"];
 const mapContainerStyle = {
-  width: "69vw",
+  width: "81vw",
   height: "100vh",
 };
 
@@ -26,8 +27,8 @@ const options = {
 
 //harita ilk açıldıgında bulunacagı kordinatlar
 const center = {
-  lat: 39.896519,
-  lng: 32.861969,
+  lat: 39.933365,
+  lng: 32.859741,
 };
 
 export default function HomeContact() {
@@ -49,8 +50,17 @@ export default function HomeContact() {
     libraries,
   });
 
-  //haritada bir noktaya tıklandıgında o kordinatları kaydeder
+  //haritada bir noktaya tıklandıgında o kordinatları kaydeder. önceki markerlar kaybolur
   const onMapClick = useCallback((e) => {
+    const newMarker = {
+      lat: e.latLng.lat(),
+      lng: e.latLng.lng(),
+      time: new Date(),
+    };
+    setMarkers([newMarker]);
+  }, []);
+  /*//önceki markerlar durur.
+ const onMapClick = useCallback((e) => {
     setMarkers((current) => [
       ...current,
       {
@@ -59,7 +69,7 @@ export default function HomeContact() {
         time: new Date(),
       },
     ]);
-  }, []);
+  }, []);*/
 
   const onMapLoad = useCallback((map) => {
     mapRef.current = map;
@@ -164,48 +174,42 @@ export default function HomeContact() {
 
   return (
     <div>
-      <Form className="text-center">
-        <StandaloneSearchBox
-          onLoad={(ref) => (originRef.current = ref)}
-          onPlacesChanged={() => handlePlacesChanged(originRef)}
-        >
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Enter Origin"
-            ref={originRef}
-          />
-        </StandaloneSearchBox>
-
-        <StandaloneSearchBox
-          onLoad={(ref) => (destiantionRef.current = ref)}
-          onPlacesChanged={() => handlePlacesChanged(destiantionRef)}
-        >
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Enter Destiantion"
-            ref={destiantionRef}
-          />
-        </StandaloneSearchBox>
-
-        {/* Diğer form alanları */}
-
-        <div className="d-flex justify-content-end mt-1">
-          <div>
-            <ButtonGroup>
-              <Button type="button" onClick={calculateRoute}>
-                Calculate Route
-              </Button>
-              <div style={{ width: "30px" }}></div> {/* Boşluk */}
-              <Button onClick={clearRoute}>
-                <FaTimes />
-              </Button>
-            </ButtonGroup>
+      <div className="d-flex justify-content-center align-items-center mt-3 form-container form">
+        <Form className="w-52 ">
+          <div className="d-flex justify-content-between mb-3">
+            <StandaloneSearchBox
+              onLoad={(ref) => (originRef.current = ref)}
+              onPlacesChanged={() => handlePlacesChanged(originRef)}
+            >
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter Origin"
+                ref={originRef}
+              />
+            </StandaloneSearchBox>
+            <div style={{ width: "5px" }}></div>
+            <StandaloneSearchBox
+              onLoad={(ref) => (destiantionRef.current = ref)}
+              onPlacesChanged={() => handlePlacesChanged(destiantionRef)}
+            >
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter Destination"
+                ref={destiantionRef}
+              />
+            </StandaloneSearchBox>
+            <div style={{ width: "5px" }}></div>
+            <Button type="button" onClick={calculateRoute}>
+              Calculate Route
+            </Button>
+            <div style={{ width: "5px" }}></div>
+            <Button onClick={clearRoute}>
+              <FaTimes />
+            </Button>
           </div>
-        </div>
-        <div className="d-flex justify-content-end mt-1">
-          <div>
+          <div className="d-flex justify-content-between">
             <span>Distance: {distance}</span>
             <span style={{ marginLeft: "100px" }}>Duration: {duration}</span>
             <span style={{ marginLeft: "100px" }}>
@@ -220,18 +224,19 @@ export default function HomeContact() {
               </Button>
             </span>
           </div>
-        </div>
-      </Form>
-
+        </Form>
+      </div>
+      {/*harita görüntüleme*/}
       <GoogleMap
         id="map"
         mapContainerStyle={mapContainerStyle}
-        zoom={8}
+        zoom={13}
         center={center}
         options={options}
         onClick={onMapClick}
         onLoad={onMapLoad}
       >
+        {/*markerlar haritada cordinatlara göre konumlara işaret bırakır*/}
         {markers.map((marker, index) => (
           <Marker
             key={marker.id || index}
@@ -243,7 +248,7 @@ export default function HomeContact() {
             }}
           />
         ))}
-
+        {/*yol tarifini görsel olarak gösteriyor*/}
         {directionsResponse && (
           <DirectionsRenderer directions={directionsResponse} />
         )}
