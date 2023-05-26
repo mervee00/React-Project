@@ -8,9 +8,10 @@ import {
   DirectionsRenderer,
 } from "@react-google-maps/api";
 import db from "./firebase";
-import { Button, ButtonGroup, Form } from "reactstrap";
+import { Button, Input, Form } from "reactstrap";
 import { FaLocationArrow, FaTimes } from "react-icons/fa";
 import "./style.css";
+import geolib from "geolib";
 
 //haritanın kaplayacagı alanı ve sürekli kendini centera göre güncellememisi için places dışarı yazdık
 const libraries = ["places"];
@@ -22,7 +23,6 @@ const mapContainerStyle = {
 //haritanın üzerinde rahat gezinebilmek için özellikleri ayarladık
 const options = {
   disableDefaultUI: true,
-  zoomControl: true,
 };
 
 //harita ilk açıldıgında bulunacagı kordinatlar
@@ -133,6 +133,8 @@ export default function HomeContact() {
       console.log(place.formatted_address);
       console.log(place.geometry.location.lat());
       console.log(place.geometry.location.lng());
+      console.log(place);
+      //setHedef(place);
     }
   };
 
@@ -155,6 +157,7 @@ export default function HomeContact() {
     const results = await directionsService.route({
       origin: originRef.current.value,
       destination: destiantionRef.current.value,
+
       // eslint-disable-next-line no-undef
       travelMode: google.maps.TravelMode.DRIVING,
     });
@@ -168,8 +171,88 @@ export default function HomeContact() {
     setDirectionsResponse(null);
     setDistance("");
     setDuration("");
-    originRef.current.value = "";
+    originRef.current.value = ""; // Origin inputunu boşaltın
     destiantionRef.current.value = "";
+    //inputları temizlemediği için sayfayı refresh yaptırdık
+    window.location.reload();
+  }
+
+  //en yakın otoparkı bulan fonksiyon
+  async function findNearestParking() {
+    if (!navigator.geolocation) {
+      console.log("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude, longitude } = position.coords;
+      const currentLocation = { lat: latitude, lng: longitude };
+
+      const nearestParking = await calculateNearestParking(currentLocation);
+      console.log("En yakın otopark:", nearestParking);
+    }, handleLocationError);
+  }
+  function calculateNearestParking(currentLocation) {
+    let nearestParking = null;
+    let nearestDistance = Infinity;
+  
+    markers.forEach((marker) => {
+      const coordinates = marker.coordinates || marker;
+      const distance = calculateDistance(currentLocation, coordinates);
+  
+      if (distance < nearestDistance) {
+        nearestParking = marker;
+        nearestDistance = distance;
+      }
+    });
+  
+    return nearestParking;
+  }
+  function calculateDistance(location1, location2) {
+    const lat1 = location1.lat;
+    const lng1 = location1.lng;
+    const lat2 = location2.lat;
+    const lng2 = location2.lng;
+  
+    const R = 6371; // Dünya'nın yarıçapı (km)
+    const dLat = degToRad(lat2 - lat1);
+    const dLng = degToRad(lng2 - lng1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(degToRad(lat1)) *
+        Math.cos(degToRad(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+  
+    return distance;
+  }
+  
+  function degToRad(degrees) {
+    return degrees * (Math.PI / 180);
+  }
+    
+ 
+
+  function handleLocationError(error) {
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        console.log("User denied the request for Geolocation.");
+        break;
+      case error.POSITION_UNAVAILABLE:
+        console.log("Location information is unavailable.");
+        break;
+      case error.TIMEOUT:
+        console.log("The request to get user location timed out.");
+        break;
+      case error.UNKNOWN_ERROR:
+        console.log("An unknown error occurred.");
+        break;
+      default:
+        console.log("An unknown error occurred.");
+        break;
+    }
   }
 
   return (
@@ -181,7 +264,7 @@ export default function HomeContact() {
               onLoad={(ref) => (originRef.current = ref)}
               onPlacesChanged={() => handlePlacesChanged(originRef)}
             >
-              <input
+              <Input
                 type="text"
                 className="form-control"
                 placeholder="Enter Origin"
@@ -193,7 +276,7 @@ export default function HomeContact() {
               onLoad={(ref) => (destiantionRef.current = ref)}
               onPlacesChanged={() => handlePlacesChanged(destiantionRef)}
             >
-              <input
+              <Input
                 type="text"
                 className="form-control"
                 placeholder="Enter Destination"
@@ -205,7 +288,7 @@ export default function HomeContact() {
               Calculate Route
             </Button>
             <div style={{ width: "5px" }}></div>
-            <Button onClick={clearRoute}>
+            <Button type="button" onClick={clearRoute}>
               <FaTimes />
             </Button>
           </div>
@@ -267,15 +350,76 @@ export default function HomeContact() {
               <h2>{selected.name}</h2>
               <p>Address: {selected.address}</p>
               <p>Empty: {selected.empty}</p>
-              {/*<p>{selectedPark.properties.DESCRIPTIO}</p>*/}
             </div>
           </InfoWindow>
         )}
       </GoogleMap>
+      <Button onClick={findNearestParking}>En Yakın Otoparkı Bul</Button>
     </div>
   );
 }
 
+ /*en yakın otoparkı geolib fonsiyonu ile bulmak
+ async function calculateNearestParking(currentLocation) {
+    const distances = markers.map((marker) => {
+      const coordinates = marker.coordinates || marker;
+      const distance = geolib.getDistance(currentLocation, coordinates);
+      return { id: marker.id, distance };
+    });
+
+    const nearestParkingId = distances.reduce(
+      (min, marker) => (marker.distance < min.distance ? marker : min),
+      distances[0]
+    ).id;
+
+    const nearestParking = markers.find(
+      (marker) => marker.id === nearestParkingId
+    );
+
+    return nearestParking;
+  }*/
+/*hedef && (
+  <>
+    <Marker
+      position={{
+        lat: hedef.geometry.location.lat(),
+        lng: hedef.geometry.location.lng(),
+      }}
+    />
+    <GoogleMap.Circle center={hedef.geometry.location} radius={150} />
+    <GoogleMap.Circle center={hedef.geometry.location} radius={300} />
+    <GoogleMap.Circle center={hedef.geometry.location} radius={450} />
+  </>
+    )*/
+/*  const defaultOptions = {
+      strokeOpacity: 0.5,
+      strokeWeight: 2,
+      clickable: false,
+      draggable: false,
+      editable: false,
+      visible: true,
+    };
+    const closeOptions = {
+      ...defaultOptions,
+      zIndex: 3,
+      fillOpacity: 0.05,
+      strokeColor: "#8BC34A",
+      fillColor: "#8BC34A",
+    };
+    const middleOptions = {
+      ...defaultOptions,
+      zIndex: 2,
+      fillOpacity: 0.05,
+      strokeColor: "#FBC02D",
+      fillColor: "#FBC02D",
+    };
+    const farOptions = {
+      ...defaultOptions,
+      zIndex: 1,
+      fillOpacity: 0.05,
+      strokeColor: "#FF5252",
+      fillColor: "#FF5252",
+    };*/
 /*
   useEffect(() => {
     const fetchData = (async) => {
