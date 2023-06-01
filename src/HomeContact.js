@@ -11,10 +11,10 @@ import db from "./firebase";
 import { Button, Input, Form } from "reactstrap";
 import { FaLocationArrow, FaTimes } from "react-icons/fa";
 import "./style.css";
-import geolib from "geolib";
 
 //haritanın kaplayacagı alanı ve sürekli kendini centera göre güncellememisi için places dışarı yazdık
-const libraries = ["places"];
+const libraries = ["places", "directions"];
+//const libraries = ["places"];
 const mapContainerStyle = {
   width: "81vw",
   height: "100vh",
@@ -49,6 +49,10 @@ export default function HomeContact() {
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_KEY,
     libraries,
   });
+  /*const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_KEY,
+    libraries,
+  });*/
 
   //haritada bir noktaya tıklandıgında o kordinatları kaydeder. önceki markerlar kaybolur
   const onMapClick = useCallback((e) => {
@@ -142,6 +146,36 @@ export default function HomeContact() {
   if (loadError) return "Error";
   if (!isLoaded) return "Loading...";
 
+  /* const { google } = window;
+  async function calculateRoute() {
+    if (
+      !originRef.current ||
+      !originRef.current.value ||
+      !destiantionRef.current ||
+      !destiantionRef.current.value
+    ) {
+      return;
+    }
+  
+    const directionsService = new google.maps.DirectionsService();
+  
+    const trafficOptions = {
+      departure_time: new Date().getTime(), // Geçerli zaman için trafik verisini kullanacak
+      trafficModel: google.maps.TrafficModel.BEST_GUESS,
+    };
+    const results = await directionsService.route({
+      origin: originRef.current.value,
+      destination: destiantionRef.current.value,
+      travelMode: google.maps.TravelMode.DRIVING,
+      ...trafficOptions,
+    });
+  
+    setDirectionsResponse(results);
+    setDistance(results.routes[0].legs[0].distance.text);
+    setDuration(results.routes[0].legs[0].duration.text);
+  }
+  */
+
   //route yapmak için
   async function calculateRoute() {
     if (
@@ -190,22 +224,23 @@ export default function HomeContact() {
 
       const nearestParking = await calculateNearestParking(currentLocation);
       console.log("En yakın otopark:", nearestParking);
+      calculateRoute();
     }, handleLocationError);
   }
   function calculateNearestParking(currentLocation) {
     let nearestParking = null;
     let nearestDistance = Infinity;
-  
+
     markers.forEach((marker) => {
       const coordinates = marker.coordinates || marker;
       const distance = calculateDistance(currentLocation, coordinates);
-  
+
       if (distance < nearestDistance) {
         nearestParking = marker;
         nearestDistance = distance;
       }
     });
-  
+
     return nearestParking;
   }
   function calculateDistance(location1, location2) {
@@ -213,7 +248,7 @@ export default function HomeContact() {
     const lng1 = location1.lng;
     const lat2 = location2.lat;
     const lng2 = location2.lng;
-  
+
     const R = 6371; // Dünya'nın yarıçapı (km)
     const dLat = degToRad(lat2 - lat1);
     const dLng = degToRad(lng2 - lng1);
@@ -225,15 +260,13 @@ export default function HomeContact() {
         Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
-  
+
     return distance;
   }
-  
+
   function degToRad(degrees) {
     return degrees * (Math.PI / 180);
   }
-    
- 
 
   function handleLocationError(error) {
     switch (error.code) {
@@ -333,8 +366,22 @@ export default function HomeContact() {
         ))}
         {/*yol tarifini görsel olarak gösteriyor*/}
         {directionsResponse && (
-          <DirectionsRenderer directions={directionsResponse} />
+          <DirectionsRenderer
+            directions={directionsResponse}
+            options={{
+              suppressMarkers: true, // Yol üzerindeki varsayılan işaretleri gizler
+              preserveViewport: true, // Haritanın görüntülemesini korur
+              polylineOptions: {
+                strokeColor: "blue", // Yol çizgisi rengi
+                strokeOpacity: 0.6, // Yol çizgisi opaklığı
+                strokeWeight: 5, // Yol çizgisi kalınlığı
+              },
+            }}
+          />
         )}
+        {/*directionsResponse && (
+          <DirectionsRenderer directions={directionsResponse} />
+        )*/}
         {/* bir park seçilince infowindow yani bilgi kutusu açılacak */}
         {selected && (
           <InfoWindow
@@ -359,7 +406,7 @@ export default function HomeContact() {
   );
 }
 
- /*en yakın otoparkı geolib fonsiyonu ile bulmak
+/*en yakın otoparkı geolib fonsiyonu ile bulmak
  async function calculateNearestParking(currentLocation) {
     const distances = markers.map((marker) => {
       const coordinates = marker.coordinates || marker;
