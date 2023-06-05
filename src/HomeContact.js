@@ -95,12 +95,11 @@ export default function HomeContact() {
       console.log(place);
 
       // Yeni değeri destiantionRef veya originRef'e atayın
-      if (ref === destiantionRef.current) {
+      console.log("destiantionBefore:",destiantionRef);
         destiantionRef.current.lat = geometry.location.lat();
         destiantionRef.current.lng = geometry.location.lng();
-      } else if (ref === originRef.current) {
-        originRef.current = newMarker;
-      }
+      
+      
     }
   };
 
@@ -142,15 +141,15 @@ export default function HomeContact() {
         const distanceA = calculateDistance(
           destiantionRef.current.lat,
           destiantionRef.current.lng,
-          a.lat,
-          a.lng
+          a.coordinates._lat,
+          a.coordinates._long
         );
 
         const distanceB = calculateDistance(
           destiantionRef.current.lat,
           destiantionRef.current.lng,
-          b.lat,
-          b.lng
+          b.coordinates._lat,
+          b.coordinates._long
         );
 
         return distanceA - distanceB;
@@ -167,8 +166,8 @@ export default function HomeContact() {
         const distance = calculateDistance(
           destiantionRef.current.lat,
           destiantionRef.current.lng,
-          parking.lat,
-          parking.lng
+          parking.coordinates._lat,
+          parking.coordinates._long
         );
         console.log(`Otopark ID: ${parking.id}, Mesafe: ${distance} km`);
       });
@@ -176,8 +175,8 @@ export default function HomeContact() {
   };
 
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
-    console.log(lat1, lng1);
-    console.log(lat2, lng2);
+    console.log("lat1 ve lng1 degeri: ",lat1, lng1);
+    console.log("lat2 ve lng2 degeri: ",lat2, lng2);
     // İki nokta arasındaki mesafeyi hesaplayan fonksiyon
     // Burada haversine formülü kullanılıyor, gerçek kullanımınıza uygun şekilde güncellemelisiniz.
     const R = 6371; // Dünya yarıçapı (km)
