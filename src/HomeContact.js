@@ -6,6 +6,7 @@ import {
   InfoWindow,
   StandaloneSearchBox,
   DirectionsRenderer,
+  TrafficLayer,
 } from "@react-google-maps/api";
 import db from "./firebase";
 import { Button, Input, Form } from "reactstrap";
@@ -14,7 +15,7 @@ import "./style.css";
 
 //haritanın kaplayacagı alanı ve sürekli kendini centera göre güncellememisi için places dışarı yazdık
 const libraries = ["places", "directions"];
-//const libraries = ["places"];
+
 const mapContainerStyle = {
   width: "81vw",
   height: "100vh",
@@ -43,16 +44,13 @@ export default function HomeContact() {
   const [selected, setSelected] = useState(null);
   const [value, setValue] = useState(null);
   const mapRef = useRef();
+  const [parkingData, setParkingData] = useState([]);
 
   //harita yükleme
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_KEY,
     libraries,
   });
-  /*const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_KEY,
-    libraries,
-  });*/
 
   //haritada bir noktaya tıklandıgında o kordinatları kaydeder. önceki markerlar kaybolur
   const onMapClick = useCallback((e) => {
@@ -63,57 +61,13 @@ export default function HomeContact() {
     };
     setMarkers([newMarker]);
   }, []);
-  /*//önceki markerlar durur.
- const onMapClick = useCallback((e) => {
-    setMarkers((current) => [
-      ...current,
-      {
-        lat: e.latLng.lat(),
-        lng: e.latLng.lng(),
-        time: new Date(),
-      },
-    ]);
-  }, []);*/
 
+  //haritaya tıklanınca 
   const onMapLoad = useCallback((map) => {
     mapRef.current = map;
     setMap(map);
     setIsMapLoaded(true);
   }, []);
-
-  //Firebase verilerini listelemek
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch data from Firestore database
-        db.collection("otopark")
-          .get()
-          .then((querySnapshot) => {
-            const data = querySnapshot.docs.map((doc) => {
-              const { coordinates, ...rest } = doc.data();
-              return {
-                id: doc.id,
-                coordinates: {
-                  lat: coordinates.latitude,
-                  lng: coordinates.longitude,
-                },
-                ...rest,
-              };
-            });
-            setMarkers(data);
-          });
-      } catch (error) {
-        console.log("error fetching data:", error);
-      }
-    };
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (value) {
-      setSelected(value);
-    }
-  }, [value]);
 
   //haritada arama yapmak için
   const handlePlacesChanged = (ref) => {
@@ -130,7 +84,8 @@ export default function HomeContact() {
         lat: geometry.location.lat(),
         lng: geometry.location.lng(),
       };
-
+      console.log(geometry.location.lat());
+      console.log(geometry.location.lng());
       // Oluşturulan markerı state içindeki markers listesine ekleyin
       setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
 
@@ -138,43 +93,120 @@ export default function HomeContact() {
       console.log(place.geometry.location.lat());
       console.log(place.geometry.location.lng());
       console.log(place);
-      //setHedef(place);
+
+      // Yeni değeri destiantionRef veya originRef'e atayın
+      if (ref === destiantionRef.current) {
+        destiantionRef.current.lat = geometry.location.lat();
+        destiantionRef.current.lng = geometry.location.lng();
+      } else if (ref === originRef.current) {
+        originRef.current = newMarker;
+      }
     }
   };
+
+  //firebase
+  useEffect(() => {
+    const fetchData = async () => {
+      const collectionRef = db.collection("otopark");
+      const snapshot = await collectionRef.get();
+      const parkingDataArray = [];
+
+      snapshot.forEach((doc) => {
+        const parking = {
+          id: doc.id,
+          ...doc.data(),
+        };
+        parkingDataArray.push(parking);
+      });
+
+      setParkingData(parkingDataArray);
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    findNearestParking();
+  }, [parkingData]);
+
+  const findNearestParking = () => {
+    if (
+      destiantionRef.current &&
+      destiantionRef.current.lat !== 0 &&
+      destiantionRef.current.lng !== 0 &&
+      parkingData.length > 0
+    ) {
+      const sortedParkingData = [...parkingData];
+
+      sortedParkingData.sort((a, b) => {
+        const distanceA = calculateDistance(
+          destiantionRef.current.lat,
+          destiantionRef.current.lng,
+          a.lat,
+          a.lng
+        );
+
+        const distanceB = calculateDistance(
+          destiantionRef.current.lat,
+          destiantionRef.current.lng,
+          b.lat,
+          b.lng
+        );
+
+        return distanceA - distanceB;
+      });
+
+      console.log("En Yakın Otopark:", sortedParkingData[0]);
+      console.log(
+        "En Uzak Otopark:",
+        sortedParkingData[sortedParkingData.length - 1]
+      );
+
+      console.log("Sıralı Otoparklar:");
+      sortedParkingData.forEach((parking) => {
+        const distance = calculateDistance(
+          destiantionRef.current.lat,
+          destiantionRef.current.lng,
+          parking.lat,
+          parking.lng
+        );
+        console.log(`Otopark ID: ${parking.id}, Mesafe: ${distance} km`);
+      });
+    }
+  };
+
+  const calculateDistance = (lat1, lng1, lat2, lng2) => {
+    console.log(lat1, lng1);
+    console.log(lat2, lng2);
+    // İki nokta arasındaki mesafeyi hesaplayan fonksiyon
+    // Burada haversine formülü kullanılıyor, gerçek kullanımınıza uygun şekilde güncellemelisiniz.
+    const R = 6371; // Dünya yarıçapı (km)
+    const dLat = deg2rad(lat2 - lat1);
+    const dLng = deg2rad(lng2 - lng1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) *
+        Math.cos(deg2rad(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  };
+
+  const deg2rad = (deg) => {
+    return deg * (Math.PI / 180);
+  };
+
+  useEffect(() => {
+    if (value) {
+      setSelected(value);
+    }
+  }, [value]);
 
   //harita yüklenirken
   if (loadError) return "Error";
   if (!isLoaded) return "Loading...";
-
-  /* const { google } = window;
-  async function calculateRoute() {
-    if (
-      !originRef.current ||
-      !originRef.current.value ||
-      !destiantionRef.current ||
-      !destiantionRef.current.value
-    ) {
-      return;
-    }
-  
-    const directionsService = new google.maps.DirectionsService();
-  
-    const trafficOptions = {
-      departure_time: new Date().getTime(), // Geçerli zaman için trafik verisini kullanacak
-      trafficModel: google.maps.TrafficModel.BEST_GUESS,
-    };
-    const results = await directionsService.route({
-      origin: originRef.current.value,
-      destination: destiantionRef.current.value,
-      travelMode: google.maps.TravelMode.DRIVING,
-      ...trafficOptions,
-    });
-  
-    setDirectionsResponse(results);
-    setDistance(results.routes[0].legs[0].distance.text);
-    setDuration(results.routes[0].legs[0].duration.text);
-  }
-  */
 
   //route yapmak için
   async function calculateRoute() {
@@ -209,83 +241,6 @@ export default function HomeContact() {
     destiantionRef.current.value = "";
     //inputları temizlemediği için sayfayı refresh yaptırdık
     window.location.reload();
-  }
-
-  //en yakın otoparkı bulan fonksiyon
-  async function findNearestParking() {
-    if (!navigator.geolocation) {
-      console.log("Geolocation is not supported by your browser.");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const { latitude, longitude } = position.coords;
-      const currentLocation = { lat: latitude, lng: longitude };
-
-      const nearestParking = await calculateNearestParking(currentLocation);
-      console.log("En yakın otopark:", nearestParking);
-      calculateRoute();
-    }, handleLocationError);
-  }
-  function calculateNearestParking(currentLocation) {
-    let nearestParking = null;
-    let nearestDistance = Infinity;
-
-    markers.forEach((marker) => {
-      const coordinates = marker.coordinates || marker;
-      const distance = calculateDistance(currentLocation, coordinates);
-
-      if (distance < nearestDistance) {
-        nearestParking = marker;
-        nearestDistance = distance;
-      }
-    });
-
-    return nearestParking;
-  }
-  function calculateDistance(location1, location2) {
-    const lat1 = location1.lat;
-    const lng1 = location1.lng;
-    const lat2 = location2.lat;
-    const lng2 = location2.lng;
-
-    const R = 6371; // Dünya'nın yarıçapı (km)
-    const dLat = degToRad(lat2 - lat1);
-    const dLng = degToRad(lng2 - lng1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(degToRad(lat1)) *
-        Math.cos(degToRad(lat2)) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-
-    return distance;
-  }
-
-  function degToRad(degrees) {
-    return degrees * (Math.PI / 180);
-  }
-
-  function handleLocationError(error) {
-    switch (error.code) {
-      case error.PERMISSION_DENIED:
-        console.log("User denied the request for Geolocation.");
-        break;
-      case error.POSITION_UNAVAILABLE:
-        console.log("Location information is unavailable.");
-        break;
-      case error.TIMEOUT:
-        console.log("The request to get user location timed out.");
-        break;
-      case error.UNKNOWN_ERROR:
-        console.log("An unknown error occurred.");
-        break;
-      default:
-        console.log("An unknown error occurred.");
-        break;
-    }
   }
 
   return (
@@ -352,6 +307,7 @@ export default function HomeContact() {
         onClick={onMapClick}
         onLoad={onMapLoad}
       >
+        <TrafficLayer autoUpdate />
         {/*markerlar haritada cordinatlara göre konumlara işaret bırakır*/}
         {markers.map((marker, index) => (
           <Marker
@@ -379,9 +335,6 @@ export default function HomeContact() {
             }}
           />
         )}
-        {/*directionsResponse && (
-          <DirectionsRenderer directions={directionsResponse} />
-        )*/}
         {/* bir park seçilince infowindow yani bilgi kutusu açılacak */}
         {selected && (
           <InfoWindow
@@ -406,6 +359,174 @@ export default function HomeContact() {
   );
 }
 
+//Firebase verilerini listelemek
+/* useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch data from Firestore database
+        db.collection("otopark")
+          .get()
+          .then((querySnapshot) => {
+            const data = querySnapshot.docs.map((doc) => {
+              const { coordinates, ...rest } = doc.data();
+              return {
+                id: doc.id,
+                coordinates: {
+                  lat: coordinates.latitude,
+                  lng: coordinates.longitude,
+                },
+                ...rest,
+              };
+            });
+            setMarkers(data);
+          });
+      } catch (error) {
+        console.log("error fetching data:", error);
+      }
+    };
+    fetchData();
+  }, []);*/
+
+/* async function findNearestParking() {
+  const destination = destiantionRef.current.value;
+  if (!destination) {
+    console.log("Destination is required.");
+    return;
+  }
+
+  const parsedDestination = await geocodeDestination(destination);
+
+  const nearestParking = calculateNearestParking(parsedDestination);
+  console.log("En yakın otopark:", nearestParking);
+  calculateRoute();
+}
+
+function calculateNearestParking(destination) {
+  let nearestParking = null;
+  let nearestDistance = Infinity;
+
+  markers.forEach((marker) => {
+    const coordinates = marker.coordinates || marker;
+    const distance = calculateDistance(destination, coordinates);
+
+    if (distance < nearestDistance) {
+      nearestParking = marker;
+      nearestDistance = distance;
+    }
+  });
+
+  return nearestParking;
+}
+
+async function geocodeDestination(destination) {
+  const geocoder = new window.google.maps.Geocoder();
+  return new Promise((resolve, reject) => {
+    geocoder.geocode({ address: destination }, (results, status) => {
+      if (status === window.google.maps.GeocoderStatus.OK) {
+        const location = results[0].geometry.location;
+        resolve({ lat: location.lat(), lng: location.lng() });
+      } else {
+        reject(new Error("Hedef konumu ayrıştırılamadı."));
+      }
+    });
+  });
+}
+function calculateDistance(location1, location2) {
+    const lat1 = location1.lat;
+    const lng1 = location1.lng;
+    const lat2 = location2.lat;
+    const lng2 = location2.lng;
+
+    const R = 6371; // Dünya'nın yarıçapı (km)
+    const dLat = degToRad(lat2 - lat1);
+    const dLng = degToRad(lng2 - lng1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(degToRad(lat1)) *
+        Math.cos(degToRad(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return distance;
+  }
+
+  function degToRad(degrees) {
+    return degrees * (Math.PI / 180);
+  }
+*/
+
+//en yakın otoparkı bulan fonksiyon
+/*async function findNearestParking() {
+    if (!navigator.geolocation) {
+      console.log("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude, longitude } = position.coords;
+      const currentLocation = { lat: latitude, lng: longitude };
+
+      const nearestParking = await calculateNearestParking(currentLocation);
+      console.log("En yakın otopark:", nearestParking);
+      calculateRoute();
+    }, handleLocationError);
+  }
+  function calculateNearestParking(currentLocation) {
+    let nearestParking = null;
+    let nearestDistance = Infinity;
+
+    markers.forEach((marker) => {
+      const coordinates = marker.coordinates || marker;
+      const distance = calculateDistance(currentLocation, coordinates);
+
+      if (distance < nearestDistance) {
+        nearestParking = marker;
+        nearestDistance = distance;
+      }
+    });
+
+    return nearestParking;
+  }
+  function calculateDistance(location1, location2) {
+    const lat1 = location1.lat;
+    const lng1 = location1.lng;
+    const lat2 = location2.lat;
+    const lng2 = location2.lng;
+
+    const R = 6371; // Dünya'nın yarıçapı (km)
+    const dLat = degToRad(lat2 - lat1);
+    const dLng = degToRad(lng2 - lng1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(degToRad(lat1)) *
+        Math.cos(degToRad(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return distance;
+  }
+
+  function degToRad(degrees) {
+    return degrees * (Math.PI / 180);
+  }
+*/
+
+/*//önceki markerlar durur.
+ const onMapClick = useCallback((e) => {
+    setMarkers((current) => [
+      ...current,
+      {
+        lat: e.latLng.lat(),
+        lng: e.latLng.lng(),
+        time: new Date(),
+      },
+    ]);
+  }, []);*/
+
 /*en yakın otoparkı geolib fonsiyonu ile bulmak
  async function calculateNearestParking(currentLocation) {
     const distances = markers.map((marker) => {
@@ -425,85 +546,3 @@ export default function HomeContact() {
 
     return nearestParking;
   }*/
-/*hedef && (
-  <>
-    <Marker
-      position={{
-        lat: hedef.geometry.location.lat(),
-        lng: hedef.geometry.location.lng(),
-      }}
-    />
-    <GoogleMap.Circle center={hedef.geometry.location} radius={150} />
-    <GoogleMap.Circle center={hedef.geometry.location} radius={300} />
-    <GoogleMap.Circle center={hedef.geometry.location} radius={450} />
-  </>
-    )*/
-/*  const defaultOptions = {
-      strokeOpacity: 0.5,
-      strokeWeight: 2,
-      clickable: false,
-      draggable: false,
-      editable: false,
-      visible: true,
-    };
-    const closeOptions = {
-      ...defaultOptions,
-      zIndex: 3,
-      fillOpacity: 0.05,
-      strokeColor: "#8BC34A",
-      fillColor: "#8BC34A",
-    };
-    const middleOptions = {
-      ...defaultOptions,
-      zIndex: 2,
-      fillOpacity: 0.05,
-      strokeColor: "#FBC02D",
-      fillColor: "#FBC02D",
-    };
-    const farOptions = {
-      ...defaultOptions,
-      zIndex: 1,
-      fillOpacity: 0.05,
-      strokeColor: "#FF5252",
-      fillColor: "#FF5252",
-    };*/
-/*
-  useEffect(() => {
-    const fetchData = (async) => {
-      try {
-        // Fetch data from Firestore database
-        db.collection("otopark")
-          .get()
-          .then((querySnapshot) => {
-            const data = querySnapshot.docs.map((doc) => ({
-              id: doc.id, // Firestore doküman kimliği
-              ...doc.data(),
-            }));
-            setMarkers(data);
-          });
-      } catch (error) {
-        console.log("error fetching data:", error);
-      }
-    };
-    fetchData();
-  }, []);
-*/
-
-/*window.addEventListener("load", () => {
-    Fetchdata();
-  });
-
-  // Fetch the required data using the get() method
-  const Fetchdata = () => {
-    db.collection("otopark")
-      .get()
-      .then((querySnapshot) => {
-        // Loop through the data and store
-        // it in array to display
-        querySnapshot.forEach((element) => {
-        const  otopark = element.otopark();
-          setInfo((arr) => [...arr, otopark]);
-        });
-      });
-  };
-*/
