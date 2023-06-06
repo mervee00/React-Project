@@ -54,16 +54,6 @@ export default function HomeContact() {
     libraries,
   });
 
-  //haritada bir noktaya tıklandıgında o kordinatları kaydeder. önceki markerlar kaybolur
-  const onMapClick = useCallback((e) => {
-    const newMarker = {
-      lat: e.latLng.lat(),
-      lng: e.latLng.lng(),
-      time: new Date(),
-    };
-    setMarkers([newMarker]);
-  }, []);
-
   //haritaya tıklanınca
   const onMapLoad = useCallback((map) => {
     mapRef.current = map;
@@ -86,8 +76,7 @@ export default function HomeContact() {
         lat: geometry.location.lat(),
         lng: geometry.location.lng(),
       };
-      console.log(geometry.location.lat());
-      console.log(geometry.location.lng());
+
       // Oluşturulan markerı state içindeki markers listesine ekleyin
       setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
 
@@ -103,7 +92,7 @@ export default function HomeContact() {
     }
   };
 
-  //firebase
+  //firebase verilere erişim
   useEffect(() => {
     const fetchData = async () => {
       const collectionRef = db.collection("otopark");
@@ -118,7 +107,7 @@ export default function HomeContact() {
         parkingDataArray.push(parking);
       });
       setParkingData(parkingDataArray);
-      setMarkers(parkingDataArray)
+      setMarkers(parkingDataArray);
     };
 
     fetchData();
@@ -128,7 +117,7 @@ export default function HomeContact() {
     findNearestParking();
   }, [parkingData]);
 
-
+  //en yakın otoparkı bulma
   const findNearestParking = () => {
     if (
       destiantionRef.current &&
@@ -137,7 +126,8 @@ export default function HomeContact() {
       parkingData.length > 0
     ) {
       const sortedData = [...parkingData];
-console.log("parkin",parkingData);
+      console.log("parking", parkingData);
+      //variş noktası ile otoparkları karşılaştırıp mesafe kısa olandan uzun olana sıralama
       sortedData.sort((a, b) => {
         const distanceA = calculateDistance(
           destiantionRef.current.lat,
@@ -153,7 +143,17 @@ console.log("parkin",parkingData);
           b.coordinates._long
         );
 
-        return distanceA - distanceB;
+        //boş yeri olmayan otoparkları dizinin en sonuna yazma kodu
+        if (a.empty === 0 && b.empty !== 0) {
+          // Eğer A'nın boş değeri 0 ise ve B'nin boş değeri 0 değilse
+          return 1; // A'yı dizinin sonuna taşı
+        } else if (a.empty !== 0 && b.empty === 0) {
+          // Eğer A'nın boş değeri 0 değilse ve B'nin boş değeri 0 ise
+          return -1; // B'yi dizinin sonuna taşı
+        } else {
+          // A ve B'nin boş değerleri 0 değilse
+          return distanceA - distanceB; // Mesafeye göre sırala
+        }
       });
 
       console.log("En Yakın Otopark:", sortedData[0]);
@@ -171,25 +171,25 @@ console.log("parkin",parkingData);
       });
 
       setSortedParkingData(sortedData);
-     
+
       setShowForm(!showForm);
-      if(!showForm){const nearestParkingMarkers = sortedData.slice(0, 3).map((parking) => ({
-      id: parking.id,
-      coordinates: {
-        lat: parking.coordinates._lat,
-        lng: parking.coordinates._long,
-      },
-    }));
-    setMarkers(nearestParkingMarkers);
-    
-    }}
+      /* if (!showForm) {
+        const nearestParkingMarkers = sortedData.slice(0, 3).map((parking) => ({
+          id: parking.id,
+          coordinates: {
+            lat: parking.coordinates._lat,
+            lng: parking.coordinates._long,
+          },
+        }));
+        setMarkers(nearestParkingMarkers);
+      }*/
+    }
   };
 
+  // Burada HAVERSİNE formülü ile iki nokta arası mesafeyi hesaplayan fonksiyon
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
     console.log("lat1 ve lng1 degeri: ", lat1, lng1);
     console.log("lat2 ve lng2 degeri: ", lat2, lng2);
-    // İki nokta arasındaki mesafeyi hesaplayan fonksiyon
-    // Burada haversine formülü kullanılıyor, gerçek kullanımınıza uygun şekilde güncellemelisiniz.
     const R = 6371; // Dünya yarıçapı (km)
     const dLat = deg2rad(lat2 - lat1);
     const dLng = deg2rad(lng2 - lng1);
@@ -204,6 +204,7 @@ console.log("parkin",parkingData);
     return distance;
   };
 
+  // Dereceyi radyana dönüştüren fonksiyon
   const deg2rad = (deg) => {
     return deg * (Math.PI / 180);
   };
@@ -218,7 +219,7 @@ console.log("parkin",parkingData);
   if (loadError) return "Error";
   if (!isLoaded) return "Loading...";
 
-  //route yapmak için
+  //İki konum arası rota oluşturan fonksiyon
   async function calculateRoute() {
     if (
       !originRef.current ||
@@ -300,7 +301,7 @@ console.log("parkin",parkingData);
                 disabled={!isMapLoaded} // Harita yüklenmediyse buton devre dışı bırakılır
                 onClick={() => {
                   map.panTo(center);
-                  map.setZoom(13,5);
+                  map.setZoom(13, 5);
                 }}
               >
                 <FaLocationArrow />
@@ -309,22 +310,31 @@ console.log("parkin",parkingData);
           </div>
         </Form>
       </div>
-
       {/*En yakın otoparklardan ilk 3 tanesi form ile sol alt kösede listelendi*/}
       {showForm && sortedParkingData.length > 0 && (
         <div className="form-otoparklist">
-         <h4 style={{ fontWeight: "bold",textAlign: 'center',  marginTop: "0px"}}>En Yakın Otoparklar</h4>
-          <hr style={{  marginTop: "0px"}}/> {/* Çizgi eklendi */}
+          <h4
+            style={{
+              fontWeight: "bold",
+              textAlign: "center",
+              marginTop: "0px",
+            }}
+          >
+            En Yakın Otoparklar{" "}
+            <button onClick={() => setShowForm(false)}>
+              <FaTimes />
+            </button>
+          </h4>
+          <hr style={{ marginTop: "0px" }} /> {/* Çizgi eklendi */}
           {sortedParkingData.slice(0, 3).map((parking, index) => {
-            
             const distance = calculateDistance(
               destiantionRef.current.lat,
               destiantionRef.current.lng,
               parking.coordinates._lat,
               parking.coordinates._long
             );
+            //noktadan sonra iki basamak
             const formattedDistance = distance.toFixed(2);
-
             return (
               <div key={parking.id}>
                 <p style={{ fontWeight: "bold", marginBottom: "2px" }}>
@@ -339,7 +349,7 @@ console.log("parkin",parkingData);
                 >
                   {parking.address}
                   <br />
-                  Empty: {parking.empty} 
+                  Empty: {parking.empty}
                   <br />
                   Mesafe: {formattedDistance} km
                 </p>
@@ -360,30 +370,22 @@ console.log("parkin",parkingData);
       >
         <TrafficLayer autoUpdate />
         {/*markerlar haritada cordinatlara göre konumlara işaret bırakır*/}
-        {/*markers.map((marker, index,id) => (
+        {markers.map((marker, index) => (
           <Marker
-            key={marker.id || index||id}
+            key={marker.id || index}
             position={
-              marker.coordinates || { lat: marker.lat, lng: marker.lng }
+              marker.coordinates
+                ? {
+                    lat: marker.coordinates._lat,
+                    lng: marker.coordinates._long,
+                  }
+                : { lat: marker.lat, lng: marker.lng }
             }
             onClick={() => {
               setSelected(marker);
             }}
           />
-          ))*/}
-         {markers.map((marker, index) => (
-    <Marker
-      key={marker.id || index}
-      position={marker.coordinates ? 
-        { lat: marker.coordinates._lat, lng: marker.coordinates._long } :
-        { lat: marker.lat, lng: marker.lng }
-      }
-      onClick={() => {
-        setSelected(marker);
-      }}
-    />
-  ))}
-
+        ))}
         {/*yol tarifini görsel olarak gösteriyor*/}
         {directionsResponse && (
           <DirectionsRenderer
@@ -399,13 +401,17 @@ console.log("parkin",parkingData);
             }}
           />
         )}
-        {/* bir park seçilince infowindow yani bilgi kutusu açılacak */}
+        {/* bir otopark seçilince infowindow yani bilgi kutusu açılacak */}
         {selected && (
           <InfoWindow
-          position={selected.coordinates ? 
-            { lat: selected.coordinates._lat, lng: selected.coordinates._long } :
-            { lat: selected.lat, lng: selected.lng }
-          }
+            position={
+              selected.coordinates
+                ? {
+                    lat: selected.coordinates._lat,
+                    lng: selected.coordinates._long,
+                  }
+                : { lat: selected.lat, lng: selected.lng }
+            }
             onCloseClick={() => {
               setSelected(null);
             }}
@@ -422,6 +428,16 @@ console.log("parkin",parkingData);
     </div>
   );
 }
+
+/*//haritada bir noktaya tıklandıgında o kordinatları kaydeder. önceki markerlar kaybolur
+  const onMapClick = useCallback((e) => {
+    const newMarker = {
+      lat: e.latLng.lat(),
+      lng: e.latLng.lng(),
+      time: new Date(),
+    };
+    setMarkers([newMarker]);
+  }, []);*/
 
 //Firebase verilerini listelemek
 /* useEffect(() => {
