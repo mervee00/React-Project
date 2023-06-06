@@ -42,6 +42,23 @@
     align-items: center
 }
 
+.form-otoparklist {
+
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    
+    background-color: #f9f9f9;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    z-index: 1;
+  }
+  
+  .form-container.show {
+    display: block;
+  }
+  
 .block{
     display: inline-block
 }
@@ -80,4 +97,6 @@
 .fullWith{
      width: 100% 
 }
+
+
 
