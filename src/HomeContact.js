@@ -45,6 +45,8 @@ export default function HomeContact() {
   const [value, setValue] = useState(null);
   const mapRef = useRef();
   const [parkingData, setParkingData] = useState([]);
+  const [showForm, setShowForm] = useState(true);
+  const [sortedParkingData, setSortedParkingData] = useState([]);
 
   //harita yükleme
   const { isLoaded, loadError } = useLoadScript({
@@ -62,7 +64,7 @@ export default function HomeContact() {
     setMarkers([newMarker]);
   }, []);
 
-  //haritaya tıklanınca 
+  //haritaya tıklanınca
   const onMapLoad = useCallback((map) => {
     mapRef.current = map;
     setMap(map);
@@ -95,11 +97,9 @@ export default function HomeContact() {
       console.log(place);
 
       // Yeni değeri destiantionRef veya originRef'e atayın
-      console.log("destiantionBefore:",destiantionRef);
-        destiantionRef.current.lat = geometry.location.lat();
-        destiantionRef.current.lng = geometry.location.lng();
-      
-      
+      console.log("destiantionBefore:", destiantionRef);
+      destiantionRef.current.lat = geometry.location.lat();
+      destiantionRef.current.lng = geometry.location.lng();
     }
   };
 
@@ -135,9 +135,9 @@ export default function HomeContact() {
       destiantionRef.current.lng !== 0 &&
       parkingData.length > 0
     ) {
-      const sortedParkingData = [...parkingData];
+      const sortedData = [...parkingData];
 
-      sortedParkingData.sort((a, b) => {
+      sortedData.sort((a, b) => {
         const distanceA = calculateDistance(
           destiantionRef.current.lat,
           destiantionRef.current.lng,
@@ -155,14 +155,11 @@ export default function HomeContact() {
         return distanceA - distanceB;
       });
 
-      console.log("En Yakın Otopark:", sortedParkingData[0]);
-      console.log(
-        "En Uzak Otopark:",
-        sortedParkingData[sortedParkingData.length - 1]
-      );
+      console.log("En Yakın Otopark:", sortedData[0]);
+      console.log("En Uzak Otopark:", sortedData[sortedData.length - 1]);
 
       console.log("Sıralı Otoparklar:");
-      sortedParkingData.forEach((parking) => {
+      sortedData.forEach((parking) => {
         const distance = calculateDistance(
           destiantionRef.current.lat,
           destiantionRef.current.lng,
@@ -171,12 +168,25 @@ export default function HomeContact() {
         );
         console.log(`Otopark ID: ${parking.id}, Mesafe: ${distance} km`);
       });
-    }
+
+      setSortedParkingData(sortedData);
+     
+      setShowForm(!showForm);
+      if(!showForm){const nearestParkingMarkers = sortedData.slice(0, 3).map((parking) => ({
+      id: parking.id,
+      coordinates: {
+        lat: parking.coordinates._lat,
+        lng: parking.coordinates._long,
+      },
+    }));
+    setMarkers(nearestParkingMarkers);
+    
+    }}
   };
 
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
-    console.log("lat1 ve lng1 degeri: ",lat1, lng1);
-    console.log("lat2 ve lng2 degeri: ",lat2, lng2);
+    console.log("lat1 ve lng1 degeri: ", lat1, lng1);
+    console.log("lat2 ve lng2 degeri: ", lat2, lng2);
     // İki nokta arasındaki mesafeyi hesaplayan fonksiyon
     // Burada haversine formülü kullanılıyor, gerçek kullanımınıza uygun şekilde güncellemelisiniz.
     const R = 6371; // Dünya yarıçapı (km)
@@ -275,11 +285,13 @@ export default function HomeContact() {
               Calculate Route
             </Button>
             <div style={{ width: "5px" }}></div>
+            <Button onClick={findNearestParking}>Nearlest Parking</Button>
+            <div style={{ width: "5px" }}></div>
             <Button type="button" onClick={clearRoute}>
               <FaTimes />
             </Button>
           </div>
-          <div className="d-flex justify-content-between">
+          <div>
             <span>Distance: {distance}</span>
             <span style={{ marginLeft: "100px" }}>Duration: {duration}</span>
             <span style={{ marginLeft: "100px" }}>
@@ -287,7 +299,7 @@ export default function HomeContact() {
                 disabled={!isMapLoaded} // Harita yüklenmediyse buton devre dışı bırakılır
                 onClick={() => {
                   map.panTo(center);
-                  map.setZoom(15);
+                  map.setZoom(13,5);
                 }}
               >
                 <FaLocationArrow />
@@ -296,6 +308,45 @@ export default function HomeContact() {
           </div>
         </Form>
       </div>
+
+      {/*En yakın otoparklardan ilk 3 tanesi form ile sol alt kösede listelendi*/}
+      {showForm && sortedParkingData.length > 0 && (
+        <div className="form-otoparklist">
+         <h4 style={{ fontWeight: "bold",textAlign: 'center',  marginTop: "0px"}}>En Yakın Otoparklar</h4>
+          <hr style={{  marginTop: "0px"}}/> {/* Çizgi eklendi */}
+          {sortedParkingData.slice(0, 3).map((parking, index) => {
+            
+            const distance = calculateDistance(
+              destiantionRef.current.lat,
+              destiantionRef.current.lng,
+              parking.coordinates._lat,
+              parking.coordinates._long
+            );
+            const formattedDistance = distance.toFixed(2);
+
+            return (
+              <div key={parking.id}>
+                <p style={{ fontWeight: "bold", marginBottom: "2px" }}>
+                  {parking.name}
+                </p>
+                <p
+                  style={{
+                    marginLeft: "20px",
+                    fontSize: "smaller",
+                    marginTop: "0px",
+                  }}
+                >
+                  {parking.address}
+                  <br />
+                  Empty: {parking.empty} 
+                  <br />
+                  Mesafe: {formattedDistance} km
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {/*harita görüntüleme*/}
       <GoogleMap
         id="map"
@@ -303,7 +354,7 @@ export default function HomeContact() {
         zoom={13}
         center={center}
         options={options}
-        onClick={onMapClick}
+        //onClick={onMapClick}
         onLoad={onMapLoad}
       >
         <TrafficLayer autoUpdate />
@@ -353,7 +404,6 @@ export default function HomeContact() {
           </InfoWindow>
         )}
       </GoogleMap>
-      <Button onClick={findNearestParking}>En Yakın Otoparkı Bul</Button>
     </div>
   );
 }
