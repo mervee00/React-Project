@@ -117,8 +117,8 @@ export default function HomeContact() {
         };
         parkingDataArray.push(parking);
       });
-
       setParkingData(parkingDataArray);
+      setMarkers(parkingDataArray)
     };
 
     fetchData();
@@ -128,6 +128,7 @@ export default function HomeContact() {
     findNearestParking();
   }, [parkingData]);
 
+
   const findNearestParking = () => {
     if (
       destiantionRef.current &&
@@ -136,7 +137,7 @@ export default function HomeContact() {
       parkingData.length > 0
     ) {
       const sortedData = [...parkingData];
-
+console.log("parkin",parkingData);
       sortedData.sort((a, b) => {
         const distanceA = calculateDistance(
           destiantionRef.current.lat,
@@ -359,9 +360,9 @@ export default function HomeContact() {
       >
         <TrafficLayer autoUpdate />
         {/*markerlar haritada cordinatlara göre konumlara işaret bırakır*/}
-        {markers.map((marker, index) => (
+        {/*markers.map((marker, index,id) => (
           <Marker
-            key={marker.id || index}
+            key={marker.id || index||id}
             position={
               marker.coordinates || { lat: marker.lat, lng: marker.lng }
             }
@@ -369,7 +370,20 @@ export default function HomeContact() {
               setSelected(marker);
             }}
           />
-        ))}
+          ))*/}
+         {markers.map((marker, index) => (
+    <Marker
+      key={marker.id || index}
+      position={marker.coordinates ? 
+        { lat: marker.coordinates._lat, lng: marker.coordinates._long } :
+        { lat: marker.lat, lng: marker.lng }
+      }
+      onClick={() => {
+        setSelected(marker);
+      }}
+    />
+  ))}
+
         {/*yol tarifini görsel olarak gösteriyor*/}
         {directionsResponse && (
           <DirectionsRenderer
@@ -388,9 +402,10 @@ export default function HomeContact() {
         {/* bir park seçilince infowindow yani bilgi kutusu açılacak */}
         {selected && (
           <InfoWindow
-            position={
-              selected.coordinates /*|| { lat: selected.lat, lng: selected.lng }*/
-            }
+          position={selected.coordinates ? 
+            { lat: selected.coordinates._lat, lng: selected.coordinates._long } :
+            { lat: selected.lat, lng: selected.lng }
+          }
             onCloseClick={() => {
               setSelected(null);
             }}

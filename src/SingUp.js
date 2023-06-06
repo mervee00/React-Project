@@ -174,7 +174,6 @@ function SingUp() {
                 onChange={(e) =>
                   setCarpark({ ...carpark, latitude: e.target.value })
                 }
-                onKeyDown={handleKeyDown}
               />
               <Input
                 id="longitude"
