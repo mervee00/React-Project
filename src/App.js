@@ -4,7 +4,6 @@ import NotFound from "./NotFound";
 import Login from "./Login";
 import Home from "./Home";
 import HomeContact from "./HomeContact";
-import EmployeeList from "./EmployeeList";
 import Contact from "./Contact";
 import SingUp from "./SingUp";
 import { GlobalProvider } from "./GlobalState";
@@ -19,7 +18,6 @@ function App() {
           <Route path="/singup" element={<SingUp />} />
           <Route path="/" element={<Home />}>
             <Route path="/HomeContact" element={<HomeContact />} />
-            <Route path="/home/EmployeeList" element={<EmployeeList />} />
             <Route path="/Contact" element={<Contact />} />
           </Route>
           <Route path="*" element={<NotFound />} />
