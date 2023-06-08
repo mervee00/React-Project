@@ -127,7 +127,7 @@ function SingUp() {
               <Input
                 id="name"
                 name="name"
-                placeholder="Carpark Name"
+                placeholder="Otopark Adı"
                 type="text"
                 value={carpark.name}
                 onChange={(e) =>
@@ -137,7 +137,7 @@ function SingUp() {
               <Input
                 id="address"
                 name="address"
-                placeholder="Carpark Address"
+                placeholder="Otopark Adres"
                 type="text"
                 value={carpark.address}
                 onChange={(e) =>
@@ -147,7 +147,7 @@ function SingUp() {
               <Input
                 id="country"
                 name="country"
-                placeholder="Carpark Country"
+                placeholder="Otopark İlçesi"
                 type="text"
                 value={carpark.country}
                 onChange={(e) =>
@@ -157,7 +157,7 @@ function SingUp() {
               <Input
                 id="empty"
                 name="empty"
-                placeholder="Carpark Empty Space"
+                placeholder="Otopark Boş Park Alanı"
                 type="number"
                 value={carpark.empty}
                 onChange={(e) =>
@@ -168,7 +168,7 @@ function SingUp() {
               <Input
                 id="latitude"
                 name="latitude"
-                placeholder="Carpark Latitude"
+                placeholder="Otopark Enlem"
                 type="number"
                 value={carpark.latitude}
                 onChange={(e) =>
@@ -178,7 +178,7 @@ function SingUp() {
               <Input
                 id="longitude"
                 name="longitude"
-                placeholder="Carpark Longitude"
+                placeholder="Otopark Boylam"
                 type="number"
                 value={carpark.longitude}
                 onChange={(e) =>
@@ -190,7 +190,7 @@ function SingUp() {
               <Stack className="flex-end" direction="horizontal" gap="3">
                 <Button variant="light"></Button>
                 <Button variant="success" onClick={onSingUp}>
-                  Save
+                  Kaydet
                 </Button>
               </Stack>
             </FormGroup>

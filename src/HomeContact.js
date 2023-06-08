@@ -266,7 +266,7 @@ export default function HomeContact() {
               <Input
                 type="text"
                 className="form-control"
-                placeholder="Enter Origin"
+                placeholder="Başlangıç girin"
                 ref={originRef}
               />
             </StandaloneSearchBox>
@@ -278,24 +278,24 @@ export default function HomeContact() {
               <Input
                 type="text"
                 className="form-control"
-                placeholder="Enter Destination"
+                placeholder="Hedefi Girin"
                 ref={destiantionRef}
               />
             </StandaloneSearchBox>
             <div style={{ width: "5px" }}></div>
             <Button type="button" onClick={calculateRoute}>
-              Calculate Route
+              Rotayı Hesapla
             </Button>
             <div style={{ width: "5px" }}></div>
-            <Button onClick={findNearestParking}>Nearlest Parking</Button>
+            <Button onClick={findNearestParking}>En Yakın Otopark</Button>
             <div style={{ width: "5px" }}></div>
             <Button type="button" onClick={clearRoute}>
               <FaTimes />
             </Button>
           </div>
           <div>
-            <span>Distance: {distance}</span>
-            <span style={{ marginLeft: "100px" }}>Duration: {duration}</span>
+            <span>Mesafe: {distance}</span>
+            <span style={{ marginLeft: "100px" }}>Süre: {duration}</span>
             <span style={{ marginLeft: "100px" }}>
               <Button
                 disabled={!isMapLoaded} // Harita yüklenmediyse buton devre dışı bırakılır
@@ -349,7 +349,7 @@ export default function HomeContact() {
                 >
                   {parking.address}
                   <br />
-                  Empty: {parking.empty}
+                  Boş Park Alanı: {parking.empty}
                   <br />
                   Mesafe: {formattedDistance} km
                 </p>
